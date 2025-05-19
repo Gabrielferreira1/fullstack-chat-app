@@ -4,17 +4,28 @@ import Message from "../models/message.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 
-export const getUsersForSidebar = async (req, res) => {
-  try {
-    const loggedInUserId = req.user._id;
-    const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+// controllers/message.controller.js
 
-    res.status(200).json(filteredUsers);
+export const getUsersForSidebar = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const user = await User.findById(userId).populate('friends', 'fullName profilePic');
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    // Filtra os amigos para exibir apenas os que estão na lista de amigos
+    const friends = user.friends;
+
+    res.status(200).json(friends);
   } catch (error) {
-    console.error("Error in getUsersForSidebar: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    console.error('Erro ao obter amigos:', error.message);
+    res.status(500).json({ message: 'Erro ao obter amigos.' });
   }
 };
+
 
 export const getMessages = async (req, res) => {
   try {
